@@ -31,7 +31,9 @@ Creates `src/MembershipSystem.Api/data/app.db` (migrations run
 automatically on startup) and serves on the URL printed in the console
 — `http://localhost:5081` by default (see `Properties/launchSettings.json`;
 pass `--urls http://localhost:<port>` to override). Uploaded photos are
-written to `src/MembershipSystem.Api/data/photos/`.
+written to `src/MembershipSystem.Api/data/photos/`. Both paths are
+configurable via `Database:Path` / `PhotoStorage:Path` in
+`appsettings.json` (relative to the Api project's content root).
 
 **Swagger UI**: `http://localhost:5081/swagger` (Development only) —
 browse and call every endpoint interactively without a separate HTTP

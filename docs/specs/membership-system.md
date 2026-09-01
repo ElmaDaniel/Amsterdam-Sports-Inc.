@@ -30,7 +30,8 @@ Full brief: `docs/specs/brief.md`.
 - Language/runtime: C#, .NET 10
 - Web framework: ASP.NET Core Web API
 - Data access: EF Core
-- Database: SQLite, file-based (`data/app.db`), no Docker — `dotnet run`
+- Database: SQLite, file-based (default `data/app.db`, path configurable
+  via `Database:Path` in `appsettings.json`), no Docker — `dotnet run`
   applies migrations and creates the file on first run
 - Test framework: xUnit
 - Photo storage: local disk under `data/photos/`, relative path persisted
@@ -389,12 +390,16 @@ Endpoints (current, post-Phase-8 additions/removals noted):
 Notes).
 
 Composition root: `src/MembershipSystem.Api/Program.cs` registers
-`MembershipDbContext` (SQLite at `data/app.db`), the three `Ef*Repository`
-adapters and `LocalDiskPhotoStore` (against `data/photos/`) behind their
-ports, and the two use case classes — this is the one place in Api
-allowed to reference `MembershipSystem.Adapters` concrete types, per the
-guardrails. Runs `db.Database.Migrate()` on startup so `dotnet run`
-needs no separate migration step.
+`MembershipDbContext` (SQLite, path from config — see below) and
+`LocalDiskPhotoStore` (path from config), the three `Ef*Repository`
+adapters behind their ports, and the two use case classes — this is the
+one place in Api allowed to reference `MembershipSystem.Adapters`
+concrete types, per the guardrails. Runs `db.Database.Migrate()` on
+startup so `dotnet run` needs no separate migration step.
+
+Both paths (`Database:Path`, `PhotoStorage:Path`) are read from
+`appsettings.json` (default `data/app.db` / `data/photos`, relative to
+content root) rather than hardcoded — added post-Phase-8, see Notes.
 
 ## Architecture boundary guardrails
 
@@ -682,3 +687,24 @@ least one test somewhere in the solution.
   same route now returns 405 (Method Not Allowed) rather than routing
   to a handler, confirming the action is genuinely gone rather than
   just erroring.
+- 2026-09-02: Moved the SQLite database path and photo storage path out
+  of hardcoded strings in `Program.cs` into `appsettings.json`
+  (`Database:Path`, `PhotoStorage:Path`; both default to `data/app.db`
+  / `data/photos`, resolved relative to content root). Prompted by the
+  seed tool's fragile hardcoded relative path
+  (`../../../../..` up from its own build output to guess the Api
+  project's `data/app.db`). The seed tool
+  (`tools/MembershipSystem.Seed`) now reads the same `Database:Path`
+  setting directly from the Api project's `appsettings.json`
+  (`Microsoft.Extensions.Configuration.Json`, added as a package
+  reference) instead of guessing — one source of truth for the path,
+  both projects agree on it. `--url`-style override still supported: a
+  positional argument to the seed tool still takes precedence if given
+  explicitly. Full suite unaffected (127/127 passing) since integration
+  tests resolve their own isolated SQLite path via
+  `MembershipApiFactory`, never through this config. Verified live:
+  cleared `data/`, ran the Api once (created the db at the
+  config-resolved path), stopped it, ran the seed tool (resolved the
+  identical path via the Api's `appsettings.json` and seeded
+  successfully), restarted the Api, confirmed `GET /branches` and a
+  branch's `/sports`/`/members` all returned the seeded data.

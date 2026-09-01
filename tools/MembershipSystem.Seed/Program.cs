@@ -1,10 +1,14 @@
 using MembershipSystem.Adapters;
 using MembershipSystem.Seed;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
+var apiProjectDirectory = Path.Combine(
+    AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "MembershipSystem.Api");
 
 var dbPath = args.Length > 0
     ? args[0]
-    : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "MembershipSystem.Api", "data", "app.db");
+    : ResolveDbPathFromApiConfig(apiProjectDirectory);
 
 var fullDbPath = Path.GetFullPath(dbPath);
 Console.WriteLine($"Seeding database: {fullDbPath}");
@@ -39,4 +43,19 @@ Console.WriteLine($"Seeded {BranchSeedData.All.Count} branches, {SportSeedData.A
 foreach (var branch in BranchSeedData.All)
 {
     Console.WriteLine($"  Branch '{branch.Name}': {branch.Id.Value}");
+}
+
+// Reads the same Database:Path setting the API itself uses
+// (src/MembershipSystem.Api/appsettings*.json), so the db path is
+// defined once and both projects agree on where it lives.
+static string ResolveDbPathFromApiConfig(string apiProjectDirectory)
+{
+    var configuration = new ConfigurationBuilder()
+        .SetBasePath(Path.GetFullPath(apiProjectDirectory))
+        .AddJsonFile("appsettings.json", optional: false)
+        .AddJsonFile("appsettings.Development.json", optional: true)
+        .Build();
+
+    var relativePath = configuration["Database:Path"] ?? "data/app.db";
+    return Path.Combine(apiProjectDirectory, relativePath);
 }

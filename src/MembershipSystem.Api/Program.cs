@@ -6,10 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dataDirectory = Path.Combine(builder.Environment.ContentRootPath, "data");
-Directory.CreateDirectory(dataDirectory);
-var dbPath = Path.Combine(dataDirectory, "app.db");
-var photosDirectory = Path.Combine(dataDirectory, "photos");
+var dbPath = Path.Combine(
+    builder.Environment.ContentRootPath,
+    builder.Configuration["Database:Path"] ?? "data/app.db");
+var photosDirectory = Path.Combine(
+    builder.Environment.ContentRootPath,
+    builder.Configuration["PhotoStorage:Path"] ?? "data/photos");
+
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 
 builder.Services.AddDbContext<MembershipDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
