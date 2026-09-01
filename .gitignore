@@ -1,0 +1,22 @@
+# .NET build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# IDE
+.vs/
+.vscode/
+
+# Runtime data (SQLite db, uploaded photos) — local only, never committed
+src/MembershipSystem.Api/data/
+
+# EF Core migration lock (only relevant while migrating)
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
